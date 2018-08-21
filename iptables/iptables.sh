@@ -3,7 +3,7 @@
 # https://linux.die.net/man/8/iptables
 IPTABLES=/sbin/iptables
 MODPROBE=/sbin/modprobe
-INT_NET=192.168.0.0/24
+EACH=(10.0.0.0/8 172.16.0.0/16 192.168.0.0/24)
 
 ### flush existing rules and set default chain pol to DROP
 echo "[+] Flushing existing iptables rules..."
@@ -30,10 +30,12 @@ $IPTABLES -A INPUT -m state --state NEW -j LOG --log-prefix "DROP ATTEMPTED CONN
 $IPTABLES -A INPUT -m state --state NEW -j DROP
 
 echo "[+] Setting up anti-spoofing rules..."
-$IPTABLES -A INPUT -i wlo+ -s ! $INT_NET -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
-$IPTABLES -A INPUT -i wlo+ -s ! $INT_NET -j DROP
-$IPTABLES -A INPUT -i enp+ -s ! $INT_NET -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
-$IPTABLES -A INPUT -i enp+ -s $INT_NET -j DROP
+for EACH in $(INT_NET); do
+$IPTABLES -A INPUT -i wlo+ -s ! $EACH -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
+$IPTABLES -A INPUT -i wlo+ -s ! $EACH -j DROP
+$IPTABLES -A INPUT -i enp+ -s ! $EACH -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
+$IPTABLES -A INPUT -i enp+ -s $EACH -j DROP
+done
 
 echo "[+] Setting up ACCEPT INPUT rules..."
 # ACCEPT NEW INPUT when it's SSH, this will be edited into
