@@ -31,18 +31,20 @@ $IPTABLES -A INPUT -m state --state NEW -j DROP
 
 echo "[+] Setting up anti-spoofing rules..."
 for EACH in $(INT_NET); do
-$IPTABLES -A INPUT -i wlo+ -s ! $EACH -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
-$IPTABLES -A INPUT -i wlo+ -s ! $EACH -j DROP
-$IPTABLES -A INPUT -i enp+ -s ! $EACH -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
-$IPTABLES -A INPUT -i enp+ -s $EACH -j DROP
+    $IPTABLES -A INPUT -i wlo+ -s ! $EACH -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
+    $IPTABLES -A INPUT -i wlo+ -s ! $EACH -j DROP
+    $IPTABLES -A INPUT -i enp+ -s ! $EACH -j LOG --log-prefix "DROP SPOOFED PACKET " --log-ip-options --log-tcp-options
+    $IPTABLES -A INPUT -i enp+ -s $EACH -j DROP
 done
 
 echo "[+] Setting up ACCEPT INPUT rules..."
-# ACCEPT NEW INPUT when it's SSH, this will be edited into
-# something a bit safer with port-knocking later on
-$IPTABLES -A INPUT -i wlo+ -p tcp -s $INT_NET --dport 22 --syn -m state --state NEW -j ACCEPT
-# Only accept pings from within the network I'm existing on
-$IPTABLES -A INPUT -p icmp -s $INT_NET --icmp-type echo-request -j ACCEPT
+for EACH in $(INT_NET); do
+    # ACCEPT NEW INPUT when it's SSH, this will be edited into
+    # something a bit safer with port-knocking later on
+    $IPTABLES -A INPUT -i wlo+ -p tcp -s $EACH --dport 22 --syn -m state --state NEW -j ACCEPT
+    # Only accept pings from within the network I'm existing on
+    $IPTABLES -A INPUT -p icmp -s $EACH --icmp-type echo-request -j ACCEPT
+done
 
 echo "[+] Setting up default logging on INPUT.."
 # Trying out comma separating interfaces to reduce code, docs don't say if you can do it so I imagine it won't actually work
